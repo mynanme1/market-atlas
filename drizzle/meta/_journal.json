@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1785222193050,
+      "tag": "0000_late_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1785226687750,
+      "tag": "0001_tearful_pride",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785229328942,
+      "tag": "0002_known_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785315190708,
+      "tag": "0003_fantastic_purple_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1785400921749,
+      "tag": "0004_neat_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1785401842098,
+      "tag": "0005_many_omega_flight",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785403437062,
+      "tag": "0006_brave_fabian_cortez",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1788334687988,
+      "tag": "0007_brown_the_call",
+      "breakpoints": true
+    }
+  ]
+}

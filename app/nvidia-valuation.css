@@ -1,0 +1,22 @@
+.historicalEvidence .nvValuation{border:1px solid #c8d7cc;border-radius:14px;padding:24px;margin:26px 0;background:#fbfdfb;color:#253d2e;font-size:16px;line-height:1.75;min-width:0}
+.nvHeading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.historicalEvidence .nvValuation h4{font-size:24px;line-height:1.4;margin:6px 0 12px}
+.historicalEvidence .nvValuation h5{font-size:19px;margin:24px 0 12px}
+.historicalEvidence .nvValuation p,.historicalEvidence .nvValuation li{font-size:16px;line-height:1.75}
+.nvCaution{font-size:14px;background:#f8efd9;color:#775615;border:1px solid #ddc995;border-radius:6px;padding:8px 12px}
+.nvSteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}
+.nvSteps article{border:1px solid #d9e3dc;border-radius:10px;padding:20px;background:#fff;min-width:0}
+.nvSteps span{display:block;color:#526957;font-size:15px}.nvSteps strong{display:block;font-size:25px;line-height:1.4;margin:12px 0;overflow-wrap:anywhere}
+.historicalEvidence .nvSteps small,.historicalEvidence .nvValuation small{display:block;font-size:14px;line-height:1.7;color:#54695b}
+.nvFormula{padding:18px 20px;background:#eaf2ec;border-left:4px solid #456d50;font-size:20px;font-weight:600;border-radius:4px}.nvFormula p{font-weight:400;margin:10px 0 0}
+.nvIssues{padding-left:24px;margin:18px 0;color:#78562a}.nvIssues li{margin-bottom:6px}
+.nvCoverage{padding:12px 0;border-bottom:1px solid #dce4de}
+.nvValuation a{color:#2f6043;text-decoration:underline;text-underline-offset:3px}.nvValuation a:hover{color:#183d27}
+.historicalEvidence .nvValuation details{background:#fff;border:1px solid #dce5de;border-radius:8px;margin:14px 0;padding:16px}
+.historicalEvidence .nvValuation summary{font-size:17px;line-height:1.6;cursor:pointer;min-height:32px}
+.historicalEvidence .nvValuation table{font-size:16px;margin-top:16px;width:100%}
+.historicalEvidence .nvValuation td,.historicalEvidence .nvValuation th{padding:12px;min-width:140px;font-size:16px;line-height:1.7}
+.nvDailyTable{max-height:420px;overflow:auto}.nvDailyTable thead{position:sticky;top:0;background:#f4f7f4}
+.nvChartScroll{overflow-x:auto}.nvChartScroll svg{display:block;width:100%;min-width:880px;background:#fff;border-radius:8px}.nvChartScroll text{font-size:16px;fill:#506756}
+.nvValuation :focus-visible{outline:3px solid #648aac;outline-offset:3px}
+@media(max-width:1000px){.nvSteps{grid-template-columns:1fr}.historicalEvidence .nvValuation{padding:18px}.nvSteps strong{font-size:24px}}

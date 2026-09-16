@@ -1,0 +1,22 @@
+.historicalEvidence{min-width:0}
+.historicalEvidence .historyFilters{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin:20px 0}
+.historyFilters label{display:grid;gap:6px;font-size:1rem;min-width:180px;flex:1}
+.historicalEvidence .historyFilters select,.historicalEvidence input{width:100%;min-height:46px;padding:10px 12px;border:1px solid #b8cabc;border-radius:8px;background:#fff;color:#243a2e;font:inherit}
+.historyFilters a{padding:12px 0;font-size:1rem}
+.historicalEvidence .historyNote{font-size:.9375rem;line-height:1.75;color:#526759}
+.historicalEvidence .historyDocuments summary{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;list-style:disclosure-closed;min-height:44px;align-items:center;font-size:1.0625rem}
+.historyDocuments summary:before{content:"＋";color:#315c43}.historyDocuments details[open]>summary:before{content:"−"}.historyDocuments summary>span:first-child{flex:1}
+.historicalEvidence .historyRelease{font-size:.9375rem;color:#526759;font-weight:400}
+.historicalEvidence table{font-size:1rem}
+.historicalEvidence th,.historicalEvidence td{white-space:normal;min-width:135px;vertical-align:top}
+.historicalEvidence td:last-child{min-width:240px;font-size:.9375rem;line-height:1.7}
+.historicalEvidence .cycleTableScroll:focus-visible,.historicalEvidence input:focus-visible,.historicalEvidence select:focus-visible{outline:3px solid #688cb6;outline-offset:3px}
+.historyGaps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.historyGaps article{padding:16px;background:#f3f7f3;border-radius:8px}.historyGaps h4{font-size:1rem;margin:0}.historyGaps h4 span{font-size:.875rem;margin-left:8px;font-weight:400}.historyGaps p{font-size:1rem;line-height:1.75}
+@media(max-width:800px){.historyGaps{grid-template-columns:1fr}.historyFilters label{min-width:100%}}
+.historyCoverage {margin:24px 0;font-size:16px;line-height:1.75}
+.historyCoverage h4 {font-size:19px;margin:16px 0 10px}
+.historyCoverage p {font-size:16px;line-height:1.75}
+.historyCoverage th,.historyCoverage td {font-size:16px;min-width:148px;padding:14px;vertical-align:top}
+.historyCoverage small {display:block;font-size:14px;line-height:1.65}
+.historyCoverage article {margin:18px 0;padding-bottom:16px;border-bottom:1px solid #dbe4de}
