@@ -1,15 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import CycleBacktestPanel from "./CycleBacktestPanel";
-import ExecutionBacktestPanel from "./ExecutionBacktestPanel";
-import StrategySuitePanel from "./StrategySuitePanel";
-import ValidationBacktestPanel from "./ValidationBacktestPanel";
-import HistoricalFactorBacktestPanel from "./HistoricalFactorBacktestPanel";
-import MatchedFilterBacktestPanel from "./MatchedFilterBacktestPanel";
-import V3MatchedBacktestPanel from "./V3MatchedBacktestPanel";
-import ExposureControlPanel from "./ExposureControlPanel";
-import StrategyImprovementPanel from "./StrategyImprovementPanel";
 
 type Company = { id: number; name: string; ticker: string; market: string; sector: string; chain: string; position?:string; color: string };
 type Driver = { id: number; name: string; probability: number; category: string };
@@ -31,35 +22,7 @@ type PaperData = { account?: PaperAccount; positions: Position[]; orders: Order[
 type MarketIndex = { symbol: string; name: string; market: string; price: number; previousClose: number; change: number; changePercent: number; high: number; low: number; quoteTime: string; currency: string };
 type KlineBar = { date: string; open: number; close: number; high: number; low: number; volume: number };
 type TimingSnapshot = { latest:number; ma20:number; return60:number; date:string };
-type BacktestComplete = {
-  status:"complete";mode:"strict"|"reconstructed";generatedAt:string; period:{start:string;end:string;calendarDays:number};
-  metrics:{initialCash:number;finalValue:number;totalReturn:number;annualizedReturn:number;benchmarkReturn:number;excessReturn:number;cashAdjustedBenchmarkReturn:number;cashAdjustedExcessReturn:number;maxDrawdown:number;annualizedVolatility:number;sharpe:number;trades:number;closedTrades:number;winRate:number;turnover:number;shortEntries?:number;borrowCosts?:number};
-  parameters:{requestedDays:number;rebalanceDays:number;entryRule?:"strict"|"balanced";entryRuleLabel?:string;enableShorts?:boolean;targetInvested:number;maxPositions:number;maxPosition:number;maxChain:number;maxGrossShort?:number;maxShortPosition?:number;annualBorrowRate?:number;commissionBps:number;slippageBps:number;execution:string;exitRules?:string[]};
-  universe:{requested:number;tested:number;names:string[]};
-  reconstructionAudit?:{
-    currentProbabilitiesUsed:boolean;staticImpactMapUsed:boolean;method:string;firstPublication:string;
-    companies:Array<{name:string;ticker:string;checkpoints:number;facts:number;first:string;last:string}>;
-  };
-  curve:Array<{date:string;strategy:number;benchmark:number;cashBenchmark:number}>;
-  trades:Array<{date:string;name:string;side:string;price:number;value:number;reason:string}>;
-  limitations:string[];
-};
-type BacktestInsufficient = {
-  status:"insufficient_point_in_time_history";mode:"strict";generatedAt:string;message:string;
-  dataAudit:{pointInTimeStart:string;availableTradingDays:number;requiredTradingDays:number;firstFactVerifiedAt:string;firstModelSnapshotAt:string};
-  limitations:string[];
-};
-type BacktestResult=BacktestComplete|BacktestInsufficient;
-
-const strategyRules = {
-  name:"驱动优先·多维证据 v2.2",
-  minimumScore:1,
-  maxHoldings:6,
-  targetInvested:.5,
-  maxPosition:.12,
-  maxChain:.25,
-  maxQuoteAgeDays:4,
-};
+import { strategyRules } from "./workspace/strategyRules";
 
 const emptyPaper: PaperData = { positions: [], orders: [], quotes: [], nav: [] };
 const money = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY", maximumFractionDigits: 0 });
@@ -126,26 +89,6 @@ function CandlestickChart({ bars }: { bars: KlineBar[] }) {
   return <canvas ref={canvasRef} className="candlestickCanvas" aria-label="个股日K线图" />;
 }
 
-function BacktestChart({ result }: { result:BacktestComplete }) {
-  const points=result.curve;
-  if(points.length<2) return <p className="paperEmpty">回测曲线数据不足。</p>;
-  const values=points.flatMap(point=>[point.strategy,point.cashBenchmark]);
-  const min=Math.min(...values),max=Math.max(...values),range=Math.max(1,max-min);
-  const path=(key:"strategy"|"cashBenchmark")=>points.map((point,index)=>{
-    const x=24+index/(points.length-1)*752;
-    const y=18+(max-point[key])/range*184;
-    return `${index?"L":"M"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  return <div className="backtestChart">
-    <div><span><i className="strategyLine" />v2.2策略</span><span><i className="benchmarkLine" />50%候选池＋50%现金</span></div>
-    <svg viewBox="0 0 800 230" role="img" aria-label="回测策略与等权候选池收益曲线">
-      {[0,1,2,3,4].map(index=><line key={index} x1="24" x2="776" y1={18+index*46} y2={18+index*46} />)}
-      <path className="benchmarkPath" d={path("cashBenchmark")} /><path className="strategyPath" d={path("strategy")} />
-      <text x="24" y="222">{result.period.start}</text><text x="776" y="222" textAnchor="end">{result.period.end}</text>
-    </svg>
-  </div>;
-}
-
 function GucdrEvidenceChain({order,snapshot,company,data}:{order:Order;snapshot?:ResearchSnapshot;company?:Company;data:ResearchData}) {
   const driver=data.drivers?.find(item=>item.name===order.driverName);
   const driverLinks=(data.driverFactLinks??[]).filter(link=>link.driverId===driver?.id);
@@ -168,7 +111,7 @@ function GucdrEvidenceChain({order,snapshot,company,data}:{order:Order;snapshot?
     {label:"业绩兑现",detail:"核能收入和利润已有历史贡献；新增核准项目的增量贡献尚未拆分",state:profitPartial?"部分证实":"待验证"},
     {label:"形成超额收益",detail:`盈利预期与估值变化最终需跑赢 ${benchmark}`,state:order.status==="已成交"?"验证中":"尚未开始"},
   ];
-  return <details className="gucdrChain" open>
+  return <details className="gucdrChain">
     <summary><span>GUCDR 完整推理链</span><small>从研究目的到结果验证，而不只是证据百分比</small></summary>
     <div className="gucdrFrame">
       <article><em>G</em><div><small>Goal · 投资目标</small><b>验证驱动能否产生超额收益</b><p>检验“{order.driverName||"当前驱动"}”能否在{horizon}使 {company?.name||order.name} 相对 {benchmark} 获得超额收益。</p></div></article>
@@ -185,7 +128,8 @@ function GucdrEvidenceChain({order,snapshot,company,data}:{order:Order;snapshot?
   </details>;
 }
 
-export function PaperTradingDashboard({ data }: { data: ResearchData }) {
+export function PaperTradingDashboard({ data, initialCompanyId }: { data: ResearchData; initialCompanyId?: number }) {
+  const [portfolioTab,setPortfolioTab]=useState(initialCompanyId ? "market" : "holdings");
   const [paper, setPaper] = useState<PaperData>(emptyPaper);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -198,17 +142,6 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
   const [chartError, setChartError] = useState("");
   const [strategyRunning,setStrategyRunning]=useState(false);
   const [timingByCompany,setTimingByCompany]=useState<Record<number,TimingSnapshot>>({});
-  const [backtest,setBacktest]=useState<BacktestResult|null>(null);
-  const [backtestDays,setBacktestDays]=useState(300);
-  const [backtestMode,setBacktestMode]=useState<"strict"|"reconstructed">("strict");
-  const [backtestRebalance,setBacktestRebalance]=useState(20);
-  const [backtestEntryRule,setBacktestEntryRule]=useState<"strict"|"balanced">("strict");
-  const [backtestShorts,setBacktestShorts]=useState(false);
-  const [backtestRunning,setBacktestRunning]=useState(false);
-  const [backtestError,setBacktestError]=useState("");
-  const [comparisonRunning,setComparisonRunning]=useState(false);
-  const [backtestComparisons,setBacktestComparisons]=useState<Array<BacktestComplete&{variantLabel:string}>>([]);
-
   useEffect(() => {
     fetch("/api/paper").then(async response => {
       if (!response.ok) throw new Error((await response.json()).error);
@@ -229,6 +162,10 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
       return payload;
     }).then(payload => setBars(payload.bars ?? [])).catch(error => { setBars([]); setChartError(error.message); }).finally(() => setChartLoading(false));
   }, [ticket.companyId,barDays]);
+
+  useEffect(() => {
+    if (initialCompanyId && data.companies.some(company=>company.id===initialCompanyId)) setTicket(current=>({...current,companyId:String(initialCompanyId)}));
+  },[initialCompanyId]);
 
   const quotesByCompany = useMemo(() => new Map(paper.quotes.map(quote => [quote.companyId, quote])), [paper.quotes]);
   const ranking = useMemo(() => {
@@ -452,37 +389,6 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
     finally{setStrategyRunning(false);}
   }
 
-  async function runHistoricalTest() {
-    setBacktestRunning(true);setBacktestError("");
-    try {
-      const response=await fetch(`/api/paper?action=backtest&days=${backtestDays}&mode=${backtestMode}&rebalanceDays=${backtestRebalance}&entryRule=${backtestEntryRule}&shorts=${backtestShorts?1:0}`);
-      const payload=await response.json();
-      if(!response.ok) throw new Error(payload.error??"回测失败");
-      setBacktest(payload);
-    } catch(error) { setBacktestError(error instanceof Error?error.message:"回测失败"); }
-    finally { setBacktestRunning(false); }
-  }
-
-  async function runParameterComparison() {
-    setComparisonRunning(true);setBacktestError("");setBacktestComparisons([]);
-    try {
-      const variants=[
-        {variantLabel:"20日·严格入场",rebalanceDays:20,entryRule:"strict"},
-        {variantLabel:"10日·严格入场",rebalanceDays:10,entryRule:"strict"},
-        {variantLabel:"5日·严格入场",rebalanceDays:5,entryRule:"strict"},
-        {variantLabel:"10日·平衡入场",rebalanceDays:10,entryRule:"balanced"},
-      ];
-      const results=await Promise.all(variants.map(async variant=>{
-        const response=await fetch(`/api/paper?action=backtest&days=${backtestDays}&mode=reconstructed&rebalanceDays=${variant.rebalanceDays}&entryRule=${variant.entryRule}&shorts=${backtestShorts?1:0}`);
-        const payload=await response.json();
-        if(!response.ok||payload.status!=="complete") throw new Error(payload.error??payload.message??"参数对照失败");
-        return {...payload,variantLabel:variant.variantLabel} as BacktestComplete&{variantLabel:string};
-      }));
-      setBacktestComparisons(results);
-    } catch(error) { setBacktestError(error instanceof Error?error.message:"参数对照失败"); }
-    finally { setComparisonRunning(false); }
-  }
-
   function chooseCandidate(item: typeof ranking[number]) {
     setTicket({
       companyId: String(item.company.id), side: "买入",
@@ -508,6 +414,35 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
 
     {message && <div className="paperNotice">{message}</div>}
 
+    <section className="paperMetrics">
+      <article><span>账户总资产</span><b>{money.format(totalValue)}</b><small>{account?.name ?? "研究模拟盘"}</small></article>
+      <article><span>累计收益</span><b className={pnl >= 0 ? "positive" : "negative"}>{pnl >= 0 ? "+" : ""}{money.format(pnl)}</b><small>{returnRate >= 0 ? "+" : ""}{returnRate.toFixed(2)}%</small></article>
+      <article><span>可用现金</span><b>{money.format(account?.cash ?? 0)}</b><small>现金占比 {totalValue ? (Number(account?.cash ?? 0)/totalValue*100).toFixed(1) : "0"}%</small></article>
+      <article><span>当前持仓</span><b>{paper.positions.length}</b><small>{pendingOrders} 笔订单等待下一交易日</small></article>
+      <article><span>成交假设</span><b>{account?.slippageBps ?? 5}<em>bp</em></b><small>佣金 {account?.commissionBps ?? 3}bp · 人民币计价</small></article>
+    </section>
+
+    <div className="ma-tabs" aria-label="模拟组合内容">{[["holdings","持仓概览"],["market","行情与候选"],["orders","下单与记录"]].map(([id,label])=><button key={id} aria-pressed={portfolioTab===id} onClick={()=>setPortfolioTab(id)}>{label}</button>)}</div>
+    {portfolioTab==="holdings"&&<>
+    <section className="paperHoldings">
+      <header><div><p className="eyebrow">PORTFOLIO</p><h3>当前持仓</h3></div><span>市值及盈亏使用最近一次行情快照</span></header>
+      <div className="holdingTable">
+        <div className="holdingHead"><span>公司</span><span>数量</span><span>平均成本</span><span>最新价格</span><span>市值</span><span>浮动盈亏</span><span>权重</span></div>
+        {paper.positions.map(position => {
+          const value = position.quantity * Number(position.lastPriceCny ?? 0);
+          const positionPnl = value - position.quantity * position.avgCostCny;
+          return <div className="holdingRow" key={position.id}>
+            <div><i style={{background:position.color}} /> <span><b>{position.name}</b><small>{position.ticker} · {position.priceDate}</small></span></div>
+            <span>{number.format(position.quantity)}</span><span>{money.format(position.avgCostCny)}</span><span>{money.format(position.lastPriceCny ?? 0)}</span><span>{money.format(value)}</span><strong className={positionPnl>=0?"positive":"negative"}>{positionPnl>=0?"+":""}{money.format(positionPnl)}</strong><span>{totalValue?(value/totalValue*100).toFixed(1):0}%</span>
+          </div>;
+        })}
+        {!paper.positions.length && <p className="paperEmpty">当前没有持仓。更新行情并提交订单后，订单会在取得下一交易日价格时成交。</p>}
+      </div>
+    </section>
+
+    <div className="ma-actions"><button onClick={()=>setPortfolioTab("market")}>检查行情与入场条件 →</button><button onClick={()=>setPortfolioTab("orders")}>查看订单与净值记录 →</button></div></>}
+    {portfolioTab==="market"&&<>
+    <details className="ma-panel"><summary>查看候选排名与既有策略规则 · 手动触发模拟决策</summary>
     <section className="strategyPanel">
       <header><div><p className="eyebrow">AUTONOMOUS RESEARCH STRATEGY</p><h3>{strategyRules.name}</h3><p>驱动净影响是起点；证据覆盖、来源质量和支持/反证共同构成证据贡献分，它只是基本面评分的一部分。趋势只负责确认入场时点。</p></div><button onClick={runStrategy} disabled={strategyRunning}>{strategyRunning?"正在核验趋势与风险…":"运行本轮策略"}</button></header>
       <div className="strategyRules">
@@ -524,46 +459,7 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
       <footer><b>分数边界</b><p>证据覆盖率不再直接代表高分：覆盖高但来源弱、相关性低或反证多，证据贡献分仍会下降。当前“基本面研究分”尚未包含标准化估值与预期差，因此不得当作完整投资分或上涨概率。</p></footer>
     </section>
 
-    <StrategyImprovementPanel />
-    <details className="cyclePanel matchedFilter"><summary>历史对照：股票仓位与v3资料变化</summary><ExposureControlPanel /><V3MatchedBacktestPanel /></details>
-    <details className="cyclePanel matchedFilter"><summary>查看历史实验：v1 → v2（不是最新v3结果）</summary><MatchedFilterBacktestPanel /></details>
-    <HistoricalFactorBacktestPanel />
-    <ValidationBacktestPanel />
-    <StrategySuitePanel />
-    <ExecutionBacktestPanel />
-    <CycleBacktestPanel onInspect={result=>setBacktest(result as BacktestComplete)} />
-    <section className="backtestPanel">
-      <header>
-        <div><p className="eyebrow">POINT-IN-TIME TEST</p><h3>策略参数对照</h3><p>探索调仓频率与入场门槛的影响。事后重建使用四家公司；严格模式使用可用公司池。历史估值与预期差尚未计分。</p></div>
-        <div className="backtestActions"><select value={backtestMode} onChange={event=>{setBacktestMode(event.target.value as "strict"|"reconstructed");setBacktest(null)}} aria-label="回测模式"><option value="strict">严格时点</option><option value="reconstructed">事后重建·非严格</option></select><select value={backtestDays} onChange={event=>setBacktestDays(Number(event.target.value))} aria-label="回测窗口"><option value={180}>180日</option><option value={300}>300日</option><option value={500}>500日</option></select><select value={backtestRebalance} onChange={event=>{setBacktestRebalance(Number(event.target.value));setBacktest(null)}} aria-label="调仓频率"><option value={20}>20日调仓</option><option value={10}>10日调仓</option><option value={5}>5日调仓</option></select><select value={backtestEntryRule} onChange={event=>{setBacktestEntryRule(event.target.value as "strict"|"balanced");setBacktest(null)}} aria-label="入场规则"><option value="strict">严格入场</option><option value="balanced">平衡入场</option></select><label className="shortToggle"><input type="checkbox" checked={backtestShorts} onChange={event=>{setBacktestShorts(event.target.checked);setBacktest(null);setBacktestComparisons([])}}/><span>模拟做空</span></label><button onClick={runHistoricalTest} disabled={backtestRunning}>{backtestRunning?"正在核对时点数据…":"运行单组"}</button><button className="secondaryBacktest" onClick={runParameterComparison} disabled={comparisonRunning}>{comparisonRunning?"正在运行四组…":"四组对照"}</button></div>
-      </header>
-      {backtestError&&<div className="paperNotice">{backtestError}</div>}
-      {backtestComparisons.length>0&&<section className="parameterComparison"><header><div><span>CONTROLLED COMPARISON</span><h4>调仓与入场参数探索</h4></div><small>各组独立读取行情；周期对照使用共享快照</small></header><div>{[...backtestComparisons].sort((a,b)=>b.metrics.cashAdjustedExcessReturn-a.metrics.cashAdjustedExcessReturn).map((result,index)=><article key={result.variantLabel} className={index===0?"bestObserved":""}><span>{index===0?"样本内相对较优":"对照组"}</span><b>{result.variantLabel}</b><strong className={result.metrics.totalReturn>=0?"positive":"negative"}>{result.metrics.totalReturn>=0?"+":""}{(result.metrics.totalReturn*100).toFixed(2)}%</strong><small>参考收益差 {((result.metrics.totalReturn-result.metrics.cashAdjustedBenchmarkReturn)*100).toFixed(2)}个百分点 · 回撤 {(result.metrics.maxDrawdown*100).toFixed(2)}% · {result.metrics.trades}笔</small></article>)}</div><footer>50%候选池＋50%现金是固定参考，并未匹配实际仓位。参数差异不能独立证明亏损原因；样本内表现较好也不代表已通过样本外验证。</footer></section>}
-      {!backtest&&!backtestRunning&&!backtestError&&<div className="backtestEmpty"><b>先测策略，再等实盘验证</b><p>回测能提前暴露收益捕获、回撤和换手问题，但不能消除前视偏差。</p></div>}
-      {backtest?.status==="insufficient_point_in_time_history"&&<div className="pointInTimeAudit"><strong>严格回测暂不成立</strong><p>{backtest.message}</p><div><article><span>时点数据起点</span><b>{backtest.dataAudit.pointInTimeStart}</b></article><article><span>已有交易日</span><b>{backtest.dataAudit.availableTradingDays}</b></article><article><span>最低要求</span><b>{backtest.dataAudit.requiredTradingDays}</b></article></div><small>首个事实核验：{backtest.dataAudit.firstFactVerifiedAt||"无"} · 首个模型快照：{backtest.dataAudit.firstModelSnapshotAt||"无"}</small>{backtest.limitations.map(item=><p className="auditRule" key={item}>{item}</p>)}</div>}
-      {backtest?.status==="complete"&&<>
-        <div className="backtestMeta"><span>{backtest.mode==="strict"?"严格时点回测":"事后重建·非严格"}</span><span>{backtest.period.start} 至 {backtest.period.end}</span><span>{backtest.universe.tested} 家固定样本</span><span>{backtest.parameters.rebalanceDays}日再平衡</span><span>{backtest.parameters.entryRuleLabel??"严格入场"}</span><span>{backtest.parameters.enableShorts?"证据空头已启用":"仅多头"}</span><span>每日检查卖出信号</span><span>成本 {backtest.parameters.commissionBps+backtest.parameters.slippageBps}bp/单边</span></div>
-        {backtest.parameters.enableShorts&&<div className="shortPolicy"><b>模拟空头边界</b><span>仅当驱动净分 ≤ -1、证据贡献 ≥ 55分、价格低于MA20且60日收益为负时建仓。</span><span>单股最多5%，总空头最多10%，年化借券成本按5%计入。</span><span>当前共触发 {backtest.metrics.shortEntries??0} 次模拟卖空，累计借券成本 {money.format(backtest.metrics.borrowCosts??0)}。</span></div>}
-        <div className="factorDataGap"><b>本轮未使用的因子</b><span>历史估值分位</span><span>盈利预期修正</span><span>市场一致预期差</span><p>缺少对应日期的可追溯快照；补齐前不允许使用当前数据回填。</p></div>
-        {backtest.reconstructionAudit&&<section className="reconstructionAudit">
-          <header><div><span>HISTORICAL EVIDENCE AUDIT</span><h4>历史信息集审计</h4></div><strong>{backtest.reconstructionAudit.currentProbabilitiesUsed?"仍含当前概率":"未使用当前概率"}</strong></header>
-          <p>{backtest.reconstructionAudit.method}</p>
-          <div>{backtest.reconstructionAudit.companies.map(company=><article key={company.ticker}><b>{company.name}</b><span>{company.ticker}</span><strong>{company.checkpoints} 个披露时点 · {company.facts} 条事实</strong><small>{company.first||"无"} 至 {company.last||"无"}</small></article>)}</div>
-          <footer><b>仍未历史化：</b><span>{backtest.reconstructionAudit.staticImpactMapUsed?"公司—驱动影响映射仍是当前静态版本，因此本结果只能称为事后重建，不能称为无前视偏差回测。":"影响映射也已按时点还原。"}</span></footer>
-        </section>}
-        <div className="backtestMetrics">
-          <article><span>策略总收益</span><b className={backtest.metrics.totalReturn>=0?"positive":"negative"}>{backtest.metrics.totalReturn>=0?"+":""}{(backtest.metrics.totalReturn*100).toFixed(2)}%</b><small>年化 {(backtest.metrics.annualizedReturn*100).toFixed(2)}%</small></article>
-          <article><span>50%股票＋现金参考</span><b>{backtest.metrics.cashAdjustedBenchmarkReturn>=0?"+":""}{(backtest.metrics.cashAdjustedBenchmarkReturn*100).toFixed(2)}%</b><small>非风险匹配；满仓候选池 {(backtest.metrics.benchmarkReturn*100).toFixed(2)}%</small></article>
-          <article><span>最大回撤</span><b className="negative">{(backtest.metrics.maxDrawdown*100).toFixed(2)}%</b><small>年化波动 {(backtest.metrics.annualizedVolatility*100).toFixed(2)}%</small></article>
-          <article><span>风险调整</span><b>{backtest.metrics.sharpe.toFixed(2)}</b><small>夏普比率</small></article>
-          <article><span>交易质量</span><b>{(backtest.metrics.winRate*100).toFixed(1)}%</b><small>{backtest.metrics.trades} 笔调仓 · 换手 {backtest.metrics.turnover.toFixed(2)}倍</small></article>
-        </div>
-        <BacktestChart result={backtest} />
-        <div className={`backtestVerdict ${backtest.metrics.cashAdjustedExcessReturn>=0?"passes":"fails"}`}><b>{backtest.metrics.cashAdjustedExcessReturn>=0?"样本内高于固定参考":"样本内低于固定参考"}</b><p>与50%候选池＋50%现金的收益差为 {((backtest.metrics.totalReturn-backtest.metrics.cashAdjustedBenchmarkReturn)*100).toFixed(2)} 个百分点。实际仓位不同，不能直接归因于选股、现金或退出规则；仍需更长窗口与样本外验证。</p></div>
-        <div className="backtestLower"><section><h4>最近回测交易</h4>{backtest.trades.slice(0,8).map((trade,index)=><article key={`${trade.date}-${trade.name}-${index}`}><span>{trade.date}</span><b>{trade.side} · {trade.name}</b><em>{money.format(trade.value)}</em><small>{trade.reason}</small></article>)}</section><section><h4>必须保留的偏差</h4>{backtest.limitations.map(item=><p key={item}>{item}</p>)}</section></div>
-      </>}
-    </section>
-
+    </details>
     <section className="marketOverviewPanel">
       <header><div><p className="eyebrow">GLOBAL MARKET</p><h3>主要市场</h3></div><span>延迟行情 · 用于识别系统性涨跌与市场风格</span></header>
       <div className="marketIndexGrid">{indices.map(index => <article key={index.symbol}>
@@ -573,14 +469,6 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
         <small>高 {number.format(index.high)} · 低 {number.format(index.low)}</small>
       </article>)}</div>
       {!indices.length&&<p className="paperEmpty">大盘行情正在连接，稍后刷新页面即可重试。</p>}
-    </section>
-
-    <section className="paperMetrics">
-      <article><span>账户总资产</span><b>{money.format(totalValue)}</b><small>{account?.name ?? "研究模拟盘"}</small></article>
-      <article><span>累计收益</span><b className={pnl >= 0 ? "positive" : "negative"}>{pnl >= 0 ? "+" : ""}{money.format(pnl)}</b><small>{returnRate >= 0 ? "+" : ""}{returnRate.toFixed(2)}%</small></article>
-      <article><span>可用现金</span><b>{money.format(account?.cash ?? 0)}</b><small>现金占比 {totalValue ? (Number(account?.cash ?? 0)/totalValue*100).toFixed(1) : "0"}%</small></article>
-      <article><span>当前持仓</span><b>{paper.positions.length}</b><small>{pendingOrders} 笔订单等待下一交易日</small></article>
-      <article><span>成交假设</span><b>{account?.slippageBps ?? 5}<em>bp</em></b><small>佣金 {account?.commissionBps ?? 3}bp · 人民币计价</small></article>
     </section>
 
     <section className="technicalWorkspace">
@@ -604,6 +492,8 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
       </div>
     </section>
 
+    <div className="ma-actions"><button onClick={()=>setPortfolioTab("orders")}>进入模拟下单 →</button></div></>}
+    {portfolioTab==="orders"&&<>
     <section className="paperTopGrid">
       <section className="candidatePanel">
         <header><div><p className="eyebrow">RESEARCH CANDIDATES</p><h3>长期基本面候选池</h3></div><span>右侧同步显示短期入场状态</span></header>
@@ -642,22 +532,6 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
       </form>
     </section>
 
-    <section className="paperHoldings">
-      <header><div><p className="eyebrow">PORTFOLIO</p><h3>当前持仓</h3></div><span>市值及盈亏使用最近一次行情快照</span></header>
-      <div className="holdingTable">
-        <div className="holdingHead"><span>公司</span><span>数量</span><span>平均成本</span><span>最新价格</span><span>市值</span><span>浮动盈亏</span><span>权重</span></div>
-        {paper.positions.map(position => {
-          const value = position.quantity * Number(position.lastPriceCny ?? 0);
-          const positionPnl = value - position.quantity * position.avgCostCny;
-          return <div className="holdingRow" key={position.id}>
-            <div><i style={{background:position.color}} /> <span><b>{position.name}</b><small>{position.ticker} · {position.priceDate}</small></span></div>
-            <span>{number.format(position.quantity)}</span><span>{money.format(position.avgCostCny)}</span><span>{money.format(position.lastPriceCny ?? 0)}</span><span>{money.format(value)}</span><strong className={positionPnl>=0?"positive":"negative"}>{positionPnl>=0?"+":""}{money.format(positionPnl)}</strong><span>{totalValue?(value/totalValue*100).toFixed(1):0}%</span>
-          </div>;
-        })}
-        {!paper.positions.length && <p className="paperEmpty">当前没有持仓。更新行情并提交订单后，订单会在取得下一交易日价格时成交。</p>}
-      </div>
-    </section>
-
     <section className="paperBottomGrid">
       <section className="orderHistory">
         <header><div><p className="eyebrow">ORDER LOG</p><h3>订单与研究留痕</h3></div><span>共 {paper.orders.length} 笔</span></header>
@@ -683,6 +557,7 @@ export function PaperTradingDashboard({ data }: { data: ResearchData }) {
       </section>
     </section>
 
+    </>}
     <section className="paperMethod">
       <b>研究价值检验</b>
       <p>模拟盘只检验“证据与驱动排名能否产生持续超额表现”。行情来自第三方延迟日线，不能替代券商成交记录；高频、盘口深度和真实市场冲击不在本阶段测试范围内。</p>
